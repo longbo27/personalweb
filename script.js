@@ -6,23 +6,20 @@ class LanguageManager {
     }
 
     detectLanguage() {
-        // 检测浏览器语言
-        const browserLang = navigator.language || navigator.userLanguage;
-        const isChinese = browserLang.startsWith('zh');
-        
         // 检查本地存储
         const savedLang = localStorage.getItem('preferred-language');
         if (savedLang) {
             return savedLang;
         }
         
-        // 根据浏览器语言决定
-        return isChinese ? 'zh' : 'en';
+        // 默认显示英文版
+        return 'en';
     }
 
     init() {
         this.setLanguage(this.currentLang);
         this.bindEvents();
+        this.showLanguageHint();
     }
 
     setLanguage(lang) {
@@ -67,8 +64,76 @@ class LanguageManager {
             btn.addEventListener('click', (e) => {
                 const lang = e.target.getAttribute('data-lang');
                 this.setLanguage(lang);
+                this.hideLanguageHint();
             });
         });
+    }
+
+    showLanguageHint() {
+        // 如果用户没有手动切换过语言，显示提示
+        if (!localStorage.getItem('preferred-language')) {
+            setTimeout(() => {
+                const hint = document.createElement('div');
+                hint.className = 'language-hint';
+                hint.innerHTML = '🌐 Click to switch to 中文';
+                hint.style.cssText = `
+                    position: fixed;
+                    top: 100px;
+                    right: 20px;
+                    background: rgba(0, 212, 255, 0.1);
+                    border: 1px solid rgba(0, 212, 255, 0.3);
+                    color: #00d4ff;
+                    padding: 10px 15px;
+                    border-radius: 20px;
+                    font-size: 0.9rem;
+                    z-index: 10000;
+                    animation: fadeInOut 3s ease-in-out;
+                    cursor: pointer;
+                `;
+                
+                // 添加动画样式
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes fadeInOut {
+                        0%, 100% { opacity: 0; transform: translateY(-10px); }
+                        20%, 80% { opacity: 1; transform: translateY(0); }
+                    }
+                `;
+                document.head.appendChild(style);
+                
+                document.body.appendChild(hint);
+                
+                // 点击提示也可以切换语言
+                hint.addEventListener('click', () => {
+                    this.setLanguage('zh');
+                    this.hideLanguageHint();
+                });
+                
+                // 3秒后自动隐藏
+                setTimeout(() => {
+                    if (document.body.contains(hint)) {
+                        hint.style.animation = 'fadeInOut 1s ease-in-out reverse';
+                        setTimeout(() => {
+                            if (document.body.contains(hint)) {
+                                document.body.removeChild(hint);
+                            }
+                        }, 1000);
+                    }
+                }, 3000);
+            }, 2000);
+        }
+    }
+
+    hideLanguageHint() {
+        const hint = document.querySelector('.language-hint');
+        if (hint) {
+            hint.style.animation = 'fadeInOut 0.5s ease-in-out reverse';
+            setTimeout(() => {
+                if (document.body.contains(hint)) {
+                    document.body.removeChild(hint);
+                }
+            }, 500);
+        }
     }
 }
 
